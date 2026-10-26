@@ -15,6 +15,8 @@ metadata:
       either unset or set to a number greater than zero. Pods that set `spec.hostUsers: false`
       are exempt, as in Pod Security Standards v1.35 and later. Pod Security Admission on
       earlier Kubernetes versions does not exempt them.
+      Set the `psaMinor` variable to match an earlier Kubernetes Pod Security Admission version,
+      for example 30 for v1.30. The default matches the newest version.
 spec:
   validationActions:
      - Audit
@@ -28,27 +30,40 @@ spec:
         operations:  ["CREATE", "UPDATE"]
         resources:   ["pods"]
   variables:
+  # Pod Security Admission minor version to match, for example 30 for v1.30.
+  - name: psaMinor
+    expression: "37"
   - name: allContainers
     expression: >-
-      object.spec.containers + 
-      object.spec.?initContainers.orValue([]) + 
+      object.spec.containers +
+      object.spec.?initContainers.orValue([]) +
       object.spec.?ephemeralContainers.orValue([])
+  # Pod Security Admission exempts user namespace Pods from v1.35.
   - name: userNamespacePod
-    expression: "object.spec.?hostUsers.orValue(true) == false"
+    expression: "variables.psaMinor >= 35 && object.spec.?hostUsers.orValue(true) == false"
   validations:
   - expression: >-
       variables.userNamespacePod ||
       object.spec.?securityContext.?runAsUser.orValue(1) > 0
     message: >-
-      Running as root is not allowed. The field spec.securityContext.runAsUser 
+      Running as root is not allowed. The field spec.securityContext.runAsUser
       must be unset or set to a number greater than zero, unless the Pod sets
       spec.hostUsers to `false`.
+    messageExpression: >-
+      'Running as root is not allowed. The field spec.securityContext.runAsUser
+      must be unset or set to a number greater than zero' +
+      (variables.psaMinor >= 35 ? ', unless the Pod sets spec.hostUsers to `false`.' : '.')
   - expression: >-
       variables.userNamespacePod ||
-      variables.allContainers.all(container, 
+      variables.allContainers.all(container,
         container.?securityContext.?runAsUser.orValue(1) > 0)
     message: >-
-      Running as root is not allowed. The field spec.containers[*].securityContext.runAsUser, 
-      spec.initContainers[*].securityContext.runAsUser, and 
+      Running as root is not allowed. The field spec.containers[*].securityContext.runAsUser,
+      spec.initContainers[*].securityContext.runAsUser, and
       spec.ephemeralContainers[*].securityContext.runAsUser must be unset or set to a number greater than zero,
       unless the Pod sets spec.hostUsers to `false`.
+    messageExpression: >-
+      'Running as root is not allowed. The field spec.containers[*].securityContext.runAsUser,
+      spec.initContainers[*].securityContext.runAsUser, and
+      spec.ephemeralContainers[*].securityContext.runAsUser must be unset or set to a number greater than zero' +
+      (variables.psaMinor >= 35 ? ', unless the Pod sets spec.hostUsers to `false`.' : '.')

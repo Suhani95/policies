@@ -16,6 +16,8 @@ metadata:
       `httpGet.host` and `tcpSocket.host` fields of every probe and lifecycle handler are unset or
       empty. It implements the `hostProbesAndHostLifecycle` check that Kubernetes added to the
       Baseline profile in v1.34.
+      Set the `psaMinor` variable to match an earlier Kubernetes Pod Security Admission version,
+      for example 30 for v1.30. The default matches the newest version.
 spec:
   validationActions:
      - Audit
@@ -29,13 +31,18 @@ spec:
         operations:  ["CREATE", "UPDATE"]
         resources:   ["pods"]
   variables:
+    # Pod Security Admission minor version to match, for example 30 for v1.30.
+    - name: psaMinor
+      expression: "37"
     - name: allContainers
       expression: >-
         object.spec.containers +
         object.spec.?initContainers.orValue([]) +
         object.spec.?ephemeralContainers.orValue([])
   validations:
+    # Pod Security Admission added this check in v1.34.
     - expression: >-
+        variables.psaMinor < 34 ||
         variables.allContainers.all(container,
           container.?livenessProbe.?httpGet.?host.orValue('') == '' &&
           container.?livenessProbe.?tcpSocket.?host.orValue('') == '' &&

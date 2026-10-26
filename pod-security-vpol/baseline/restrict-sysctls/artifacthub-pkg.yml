@@ -2,7 +2,7 @@ name: restrict-sysctls-vpol
 version: 1.0.0
 displayName: Restrict sysctls in ValidatingPolicy
 description: >-
-  Sysctls can disable security mechanisms or affect all containers on a host, and should be disallowed except for an allowed "safe" subset. A sysctl is considered safe if it is namespaced in the container or the Pod, and it is isolated from other Pods or processes on the same Node. This policy ensures that only those "safe" subsets can be specified in a Pod.
+  Sysctls can disable security mechanisms or affect all containers on a host, and should be disallowed except for an allowed "safe" subset. A sysctl is considered safe if it is namespaced in the container or the Pod, and it is isolated from other Pods or processes on the same Node. This policy ensures that only those "safe" subsets can be specified in a Pod. Set the `psaMinor` variable to match an earlier Kubernetes Pod Security Admission version, for example 30 for v1.30. The default matches the newest version.
 install: |-
   ```shell
   kubectl apply -f https://raw.githubusercontent.com/kyverno/policies/main/pod-security-vpol/baseline/restrict-sysctls/restrict-sysctls.yaml
@@ -12,12 +12,12 @@ keywords:
   - Pod Security Standards (Baseline)
   - ValidatingPolicy
 readme: |
-  Sysctls can disable security mechanisms or affect all containers on a host, and should be disallowed except for an allowed "safe" subset. A sysctl is considered safe if it is namespaced in the container or the Pod, and it is isolated from other Pods or processes on the same Node. This policy ensures that only those "safe" subsets can be specified in a Pod.
+  Sysctls can disable security mechanisms or affect all containers on a host, and should be disallowed except for an allowed "safe" subset. A sysctl is considered safe if it is namespaced in the container or the Pod, and it is isolated from other Pods or processes on the same Node. This policy ensures that only those "safe" subsets can be specified in a Pod. Set the `psaMinor` variable to match an earlier Kubernetes Pod Security Admission version, for example 30 for v1.30. The default matches the newest version.
   
   Refer to the documentation for more details on Kyverno annotations: https://artifacthub.io/docs/topics/annotations/kyverno/
 annotations:
   kyverno/category: "Pod Security Standards (Baseline) in ValidatingPolicy"
   kyverno/kubernetesVersion: "1.30+"
   kyverno/subject: "Pod"
-digest: c04de70c78e0acad06c34cf30a19b1d613f6882ae360b35bbe0cc1afb2bafd05
+digest: cccfc2bdc8f2c9eb3e75c2eefe794d12a434de1a5f9bd2fe6c4d793efcd0a9a8
 createdAt: "2025-03-13T23:26:58Z"

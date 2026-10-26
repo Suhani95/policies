@@ -27,6 +27,8 @@ missing-policy checklist and per-sample remediation details.
 
 See https://kyverno.io/policies/ for a list of all the policies represented here in a simplified list with easy filtering abilities.
 
+To match the Pod Security Standards policies to an earlier Kubernetes Pod Security Admission version, see [pod-security-vpol](pod-security-vpol/README.md#pin-a-pod-security-admission-version).
+
 ## Contribution
 
 Anyone and everyone is welcome to write and contribute Kyverno policies! We have standardized on several practices to ensure these policies are effective, descriptive, and assist in easy location on the website. Please follow these guidelines when contributing or modifying a policy.
