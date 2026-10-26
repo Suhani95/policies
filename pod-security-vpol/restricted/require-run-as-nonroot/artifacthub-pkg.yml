@@ -2,7 +2,7 @@ name: require-run-as-nonroot-vpol
 version: 1.0.0
 displayName: Require runAsNonRoot in ValidatingPolicy
 description: >-
-  Containers must run as non-root users. This policy ensures that every container sets `runAsNonRoot` to `true` or inherits it from the Pod, and that neither sets it to `false`. Pods that set `spec.hostUsers: false` are exempt, as in Pod Security Standards v1.35 and later. Pod Security Admission on earlier Kubernetes versions does not exempt them.
+  Containers must run as non-root users. This policy ensures that every container sets `runAsNonRoot` to `true` or inherits it from the Pod, and that neither sets it to `false`. Pods that set `spec.hostUsers: false` are exempt, as in Pod Security Standards v1.35 and later. Pod Security Admission on earlier Kubernetes versions does not exempt them. Set the `psaMinor` variable to match an earlier Kubernetes Pod Security Admission version, for example 30 for v1.30. The default matches the newest version.
 install: |-
   ```shell
   kubectl apply -f https://raw.githubusercontent.com/kyverno/policies/main/pod-security-vpol/restricted/require-run-as-nonroot/require-run-as-nonroot.yaml
@@ -12,12 +12,12 @@ keywords:
   - Pod Security Standards (Restricted)
   - ValidatingPolicy
 readme: |
-  Containers must run as non-root users. This policy ensures that every container sets `runAsNonRoot` to `true` or inherits it from the Pod, and that neither sets it to `false`. Pods that set `spec.hostUsers: false` are exempt, as in Pod Security Standards v1.35 and later. Pod Security Admission on earlier Kubernetes versions does not exempt them.
+  Containers must run as non-root users. This policy ensures that every container sets `runAsNonRoot` to `true` or inherits it from the Pod, and that neither sets it to `false`. Pods that set `spec.hostUsers: false` are exempt, as in Pod Security Standards v1.35 and later. Pod Security Admission on earlier Kubernetes versions does not exempt them. Set the `psaMinor` variable to match an earlier Kubernetes Pod Security Admission version, for example 30 for v1.30. The default matches the newest version.
 
   Refer to the documentation for more details on Kyverno annotations: https://artifacthub.io/docs/topics/annotations/kyverno/
 annotations:
   kyverno/category: "Pod Security Standards (Restricted)"
   kyverno/kubernetesVersion: "1.30+"
   kyverno/subject: "Pod"
-digest: c7d1d7428a2beff41de4094118e0ecf66428e3625bfcad49141d2456aba381f9
+digest: f5e6ffeab4314bfb8b7832bd04baa032afe644ed3d983f56bf5df94d130faf46
 createdAt: "2025-03-13T23:26:58Z"

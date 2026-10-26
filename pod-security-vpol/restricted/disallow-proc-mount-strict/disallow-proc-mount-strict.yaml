@@ -16,6 +16,8 @@ metadata:
       that run in a user namespace. It implements the Restricted procMount check of Pod
       Security Standards v1.35 and later, which overrides the user namespace exemption in the
       Baseline `disallow-proc-mount` policy.
+      Set the `psaMinor` variable to match an earlier Kubernetes Pod Security Admission version,
+      for example 30 for v1.30. The default matches the newest version.
 spec:
   validationActions:
      - Audit
@@ -29,6 +31,9 @@ spec:
         operations:  ["CREATE", "UPDATE"]
         resources:   ["pods"]
   variables:
+    # Pod Security Admission minor version to match, for example 30 for v1.30.
+    - name: psaMinor
+      expression: "37"
     - name: allContainers
       expression: >-
         object.spec.containers +
@@ -36,7 +41,10 @@ spec:
           object.spec.?ephemeralContainers.orValue([])
   validations:
     # No user namespace exemption. PSA Restricted overrides the relaxed Baseline check.
+    # Pod Security Admission added this check in v1.35. Before that, the Baseline
+    # disallow-proc-mount policy applies with no exemption.
     - expression: >-
+        variables.psaMinor < 35 ||
         variables.allContainers.all(container,
           container.?securityContext.?procMount.orValue('Default') == 'Default')
       message: >-

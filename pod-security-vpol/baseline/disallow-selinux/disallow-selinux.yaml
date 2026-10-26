@@ -13,6 +13,8 @@ metadata:
     policies.kyverno.io/description: >-
       SELinux options can be used to escalate privileges and should not be allowed. This policy
       ensures that the `seLinuxOptions` field is undefined.
+      Set the `psaMinor` variable to match an earlier Kubernetes Pod Security Admission version,
+      for example 30 for v1.30. The default matches the newest version.
 spec:
   validationActions:
      - Audit
@@ -26,13 +28,18 @@ spec:
         operations:  ["CREATE", "UPDATE"]
         resources:   ["pods"]
   variables:
+  # Pod Security Admission minor version to match, for example 30 for v1.30.
+  - name: psaMinor
+    expression: "37"
   - name: allContainerTypes
     expression: >-
       object.spec.containers + 
       object.spec.?initContainers.orValue([]) + 
       object.spec.?ephemeralContainers.orValue([])
   - name: seLinuxTypes
-    expression: "['container_t', 'container_init_t', 'container_kvm_t', 'container_engine_t']"
+    expression: >-
+      ['container_t', 'container_init_t', 'container_kvm_t'] +
+      (variables.psaMinor >= 31 ? ['container_engine_t'] : [])
   - name: hasValidSELinuxType
     expression: >-
       object.spec.?securityContext.?seLinuxOptions.?type.orValue('') == '' || 
@@ -51,6 +58,10 @@ spec:
       Setting the SELinux type is restricted. The field securityContext.seLinuxOptions.type
       must be unset, empty, or set to one of the allowed values (container_t, container_init_t,
       container_kvm_t, or container_engine_t).
+    messageExpression: >-
+      'Setting the SELinux type is restricted. The field securityContext.seLinuxOptions.type
+      must be unset, empty, or set to one of the allowed values (' +
+      variables.seLinuxTypes.join(', ') + ').'
   - expression: >-
       variables.hasValidSELinuxUserRole &&
       variables.allContainerTypes.all(container,

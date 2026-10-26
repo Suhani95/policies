@@ -16,7 +16,9 @@ metadata:
       sysctl is considered safe if it is namespaced in the container or the
       Pod, and it is isolated from other Pods or processes on the same Node.
       This policy ensures that only those "safe" subsets can be specified in
-      a Pod.
+      a Pod. Set the `psaMinor` variable to match an earlier Kubernetes Pod
+      Security Admission version, for example 30 for v1.30. The default
+      matches the newest version.
 spec:
   validationActions:
      - Audit
@@ -30,25 +32,30 @@ spec:
         operations:  ["CREATE", "UPDATE"]
         resources:   ["pods"]
   variables:
+    # Pod Security Admission minor version to match, for example 30 for v1.30.
+    - name: psaMinor
+      expression: "37"
     - name: allowedSysctls
       expression: >-
         ['kernel.shm_rmid_forced', 'net.ipv4.ip_local_port_range',
-         'net.ipv4.ip_local_reserved_ports', 'net.ipv4.ip_unprivileged_port_start',
-         'net.ipv4.ping_group_range', 'net.ipv4.tcp_fin_timeout',
-         'net.ipv4.tcp_keepalive_intvl', 'net.ipv4.tcp_keepalive_probes',
-         'net.ipv4.tcp_keepalive_time', 'net.ipv4.tcp_notsent_lowat',
-         'net.ipv4.tcp_rmem', 'net.ipv4.tcp_slow_start_after_idle',
-         'net.ipv4.tcp_syncookies', 'net.ipv4.tcp_wmem']
+         'net.ipv4.ip_unprivileged_port_start', 'net.ipv4.ping_group_range',
+         'net.ipv4.tcp_syncookies'] +
+        (variables.psaMinor >= 27 ? ['net.ipv4.ip_local_reserved_ports'] : []) +
+        (variables.psaMinor >= 29 ? ['net.ipv4.tcp_fin_timeout', 'net.ipv4.tcp_keepalive_intvl',
+          'net.ipv4.tcp_keepalive_probes', 'net.ipv4.tcp_keepalive_time'] : []) +
+        (variables.psaMinor >= 32 ? ['net.ipv4.tcp_rmem', 'net.ipv4.tcp_wmem'] : []) +
+        (variables.psaMinor >= 37 ? ['net.ipv4.tcp_notsent_lowat',
+          'net.ipv4.tcp_slow_start_after_idle'] : [])
   validations:
     - expression: >-
-        object.spec.?securityContext.?sysctls.orValue([]).all(sysctl, 
+        object.spec.?securityContext.?sysctls.orValue([]).all(sysctl,
           sysctl.?name.orValue('') in variables.allowedSysctls)
       message: >-
         Setting additional sysctls above the allowed type is disallowed.
         The field spec.securityContext.sysctls must be unset or use only the safe sysctls
-        allowed by the Pod Security Standards: kernel.shm_rmid_forced,
-        net.ipv4.ip_local_port_range, net.ipv4.ip_local_reserved_ports,
-        net.ipv4.ip_unprivileged_port_start, net.ipv4.ping_group_range,
-        net.ipv4.tcp_fin_timeout, net.ipv4.tcp_keepalive_intvl, net.ipv4.tcp_keepalive_probes,
-        net.ipv4.tcp_keepalive_time, net.ipv4.tcp_notsent_lowat, net.ipv4.tcp_rmem,
-        net.ipv4.tcp_slow_start_after_idle, net.ipv4.tcp_syncookies, and net.ipv4.tcp_wmem.
+        allowed by the Pod Security Standards.
+      messageExpression: >-
+        'Setting additional sysctls above the allowed type is disallowed.
+        The field spec.securityContext.sysctls must be unset or use only the safe sysctls
+        allowed by the Pod Security Standards v1.' + string(variables.psaMinor) + ': ' +
+        variables.allowedSysctls.join(', ') + '.'

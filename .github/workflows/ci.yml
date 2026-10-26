@@ -80,6 +80,9 @@ jobs:
       - name: Check artifacthub-pkg digests
         run: ./.hack/update-artifacthub-pkg.sh
         working-directory: policies
+      - name: Check PSA version test policies
+        run: ./.hack/update-psa-version-tests.sh
+        working-directory: policies
       - name: Check diff
         run: |
           set -e

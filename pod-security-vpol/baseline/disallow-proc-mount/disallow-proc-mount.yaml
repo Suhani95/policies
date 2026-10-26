@@ -17,6 +17,8 @@ metadata:
       Security Admission on earlier Kubernetes versions does not exempt them. The API server
       accepts a procMount of `Unmasked` only when `spec.hostUsers` is `false`, and only with
       the `ProcMountType` feature gate, which is on by default from Kubernetes 1.33.
+      Set the `psaMinor` variable to match an earlier Kubernetes Pod Security Admission version,
+      for example 30 for v1.30. The default matches the newest version.
 spec:
   validationActions:
      - Audit
@@ -30,13 +32,17 @@ spec:
         operations:  ["CREATE", "UPDATE"]
         resources:   ["pods"]
   variables:
+    # Pod Security Admission minor version to match, for example 30 for v1.30.
+    - name: psaMinor
+      expression: "37"
     - name: allContainers
       expression: >-
-        object.spec.containers + 
-          object.spec.?initContainers.orValue([]) + 
+        object.spec.containers +
+          object.spec.?initContainers.orValue([]) +
           object.spec.?ephemeralContainers.orValue([])
+    # Pod Security Admission exempts user namespace Pods from v1.35.
     - name: userNamespacePod
-      expression: "object.spec.?hostUsers.orValue(true) == false"
+      expression: "variables.psaMinor >= 35 && object.spec.?hostUsers.orValue(true) == false"
   validations:
     - expression: >-
         variables.userNamespacePod ||
@@ -45,3 +51,6 @@ spec:
       message: >-
         Changing the proc mount from the default is not allowed, unless the Pod sets
         spec.hostUsers to `false`.
+      messageExpression: >-
+        'Changing the proc mount from the default is not allowed' +
+        (variables.psaMinor >= 35 ? ', unless the Pod sets spec.hostUsers to `false`.' : '.')
