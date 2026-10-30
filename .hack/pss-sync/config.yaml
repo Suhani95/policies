@@ -1,0 +1,70 @@
+# Configuration for .hack/pss-sync. Read README.md before you change it.
+
+# The PSA check (k8s.io/pod-security-admission) that each policy implements.
+# Every chart policy needs an entry.
+checks:
+  disallow-capabilities: capabilities_baseline
+  disallow-host-namespaces: hostNamespaces
+  disallow-host-path: hostPathVolumes
+  disallow-host-ports: hostPorts
+  disallow-host-probes: hostProbesAndHostLifecycle
+  disallow-host-process: windowsHostProcess
+  disallow-privileged-containers: privileged
+  disallow-proc-mount: procMount
+  disallow-selinux: seLinuxOptions
+  restrict-apparmor-profiles: appArmorProfile
+  restrict-seccomp: seccompProfile_baseline
+  restrict-sysctls: sysctls
+  disallow-capabilities-strict: capabilities_restricted
+  disallow-privilege-escalation: allowPrivilegeEscalation
+  disallow-proc-mount-strict: procMount_restricted
+  require-run-as-non-root-user: runAsUser
+  require-run-as-nonroot: runAsNonRoot
+  restrict-seccomp-strict: seccompProfile_restricted
+  restrict-volume-types: restrictedVolumes
+
+# Allow-list variables that the sync updates from the chart. Any other chart change
+# fails the behavior check and needs a manual update.
+lists:
+  - policy: restrict-sysctls
+    variable: allowedSysctls
+    anchor: kernel.shm_rmid_forced
+    order: sorted
+    message:
+      validation: 0
+      conjunction: and
+    probe:
+      field: sysctl
+      outside: kernel.msgmax
+  - policy: disallow-selinux
+    variable: seLinuxTypes
+    anchor: container_t
+    # The policy allows an empty type outside the list.
+    ignore: [""]
+    order: keep
+    message:
+      validation: 0
+      conjunction: or
+    probe:
+      field: seLinuxType
+      outside: unconfined_t
+  - policy: disallow-capabilities
+    variable: allowedCapabilities
+    anchor: AUDIT_WRITE
+    order: sorted
+    message:
+      validation: 0
+    probe:
+      field: capability
+      outside: SYS_ADMIN
+
+# Policy and Pod pairs that the behavior check skips. Pods from a policy's .kyverno-test
+# fixtures are named <policy>-<pod>. Set "in" to chart or pod-security-vpol to skip the pair
+# for one side only. Each entry needs a reason.
+knownDifferences:
+  - policy: restrict-apparmor-profiles
+    pod: restrict-apparmor-profiles-badpod11
+    in: chart
+    reason: >-
+      The chart allows an appArmorProfile without a type, which PSA and pod-security-vpol deny.
+      The Pod API requires the type, so this shows only in CLI tests.

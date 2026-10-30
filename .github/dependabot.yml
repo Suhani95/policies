@@ -6,3 +6,8 @@ updates:
       - /.github/actions/*/
     schedule:
       interval: daily
+  - package-ecosystem: gomod
+    # Keeps k8s.io/pod-security-admission current for the PSS sync. See .hack/pss-sync/README.md.
+    directory: /.hack/pss-sync
+    schedule:
+      interval: weekly
