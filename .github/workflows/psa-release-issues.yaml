@@ -16,7 +16,7 @@ name: PSA release issues
 on:
   schedule:
     # Quarterly, on January, April, July, and October 1 at 06:23 UTC.
-    - cron: '23 6 1 1,4,7,10 *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
     inputs:
       dry-run:
@@ -108,7 +108,7 @@ jobs:
           TAG: ${{ inputs.tag }}
           SINCE: ${{ inputs.since }}
           # Empty, and so kubernetes/pod-security-admission, unless a manual run sets it.
-          REPOSITORY: ${{ inputs.repository }}
+          REPOSITORY: ${{ inputs.repository || 'https://github.com/Suhani95/pod-security-admission' }}
         run: |
           args=(--repo "$REPO" --out "$RUNNER_TEMP/psa-release-out")
           [ "$DRY_RUN" = "true" ] && args+=(--dry-run)
