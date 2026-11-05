@@ -106,8 +106,9 @@ value `true`, under **Settings** > **Secrets and variables** > **Actions** > **V
 pause them.
 
 The workflow uses the default `GITHUB_TOKEN` with `contents: read` and `issues: write`, and no secret. It creates
-the `psa-vpol-update` and `needs-manual-review` labels if they don't exist. A failed scheduled run shows in the
-**Actions** tab, and GitHub notifies the user who last changed the schedule.
+the `psa-vpol-update` and `needs-manual-review` labels if they don't exist. When a scheduled run fails, the
+`sync-issue` job opens a `workflow-failure` issue with the failing log, and closes it when a later scheduled run
+succeeds. It uses `.github/actions/workflow/failure-issue`, a copy of the same action in kyverno/kyverno.
 
 The repository must have Issues turned on. Every run, including a dry run, checks this first and fails with a clear
 message when they're off. Forks have Issues off by default.
@@ -142,7 +143,7 @@ When upstream adds a check, add it to `checks`. The tests fail when a mapped pol
 
 ## Test a change
 
-The `Test` job runs `test-psa-release-issues.py` on each pull request that changes the workflow, the files in this
+The `Test PSA release issues` job runs `test-psa-release-issues.py` on each pull request that changes the workflow, the files in this
 folder, or `pod-security-vpol/`. The tests use a local git repository shaped like the mirror, a fake GitHub API,
 and a fake `gh` process, and they read the workflow file to check its permissions, pinned actions, timeouts,
 inputs, defaults, and concurrency group. They don't run the workflow.

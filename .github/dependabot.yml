@@ -4,5 +4,6 @@ updates:
     directories:
       - /
       - /.github/actions/*/
+      - /.github/actions/*/*/
     schedule:
       interval: daily

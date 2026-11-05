@@ -48,7 +48,8 @@ permissions: {}
 
 jobs:
   test:
-    name: Test
+    # Not "test": that name is a required check from ci.yml.
+    name: Test PSA release issues
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -130,3 +131,26 @@ jobs:
           path: ${{ runner.temp }}/psa-release-out/
           if-no-files-found: ignore
           retention-days: 7
+
+  # Opens a workflow-failure issue when a scheduled run fails, and closes it
+  # when a later scheduled run succeeds, so a missed release doesn't go unnoticed.
+  sync-issue:
+    if: always() && github.event_name == 'schedule' && vars.PSA_VPOL_UPDATE_ISSUES == 'true'
+    needs:
+      - test
+      - check
+    permissions:
+      contents: read
+      issues: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Sync issue
+        uses: ./.github/actions/workflow/failure-issue
+        with:
+          conclusion: ${{ contains(needs.*.result, 'failure') && 'failure' || job.status }}
+          needs: ${{ toJSON(needs) }}
