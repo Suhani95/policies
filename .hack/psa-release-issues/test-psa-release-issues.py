@@ -1123,7 +1123,7 @@ class WorkflowTest(unittest.TestCase):
         inputs = self.on["workflow_dispatch"]["inputs"]
         self.assertIs(inputs["dry-run"]["default"], True)
         # Quarterly: minor releases come out about every 4 months.
-        self.assertEqual(self.on["schedule"], [{"cron": "*/5 * * * *"}])
+        self.assertEqual(self.on["schedule"], [{"cron": "23 6 1 1,4,7,10 *"}])
         check = self.jobs["check"]
         # Scheduled runs are opt-in, and only the default branch opens issues.
         self.assertIn("vars.PSA_VPOL_UPDATE_ISSUES == 'true'", check["if"])
@@ -1133,7 +1133,7 @@ class WorkflowTest(unittest.TestCase):
         # The test-only repository input is empty by default, so scheduled runs read the upstream mirror.
         self.assertEqual(inputs["repository"]["default"], "")
         step = next(s for s in check["steps"] if s.get("name") == "Check releases")
-        self.assertEqual(step["env"]["REPOSITORY"], "${{ inputs.repository || 'https://github.com/Suhani95/pod-security-admission' }}")
+        self.assertEqual(step["env"]["REPOSITORY"], "${{ inputs.repository }}")
         self.assertIn('[ -n "$REPOSITORY" ] && args+=(--repository "$REPOSITORY")', step["run"])
 
     def test_one_check_job_at_a_time_per_repository(self):

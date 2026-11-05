@@ -4,7 +4,7 @@
 # kubernetes-1.<minor>.0 tag is checked on every run, so the pod-security-vpol
 # policies must already match upstream at this release. Move it forward only to a
 # minor release whose changes are all handled.
-since: kubernetes-1.98.0
+since: kubernetes-1.37.0
 
 # Upstream check ID (the ID in policy/check_*.go) to the policy in
 # pod-security-vpol. Fixture names are the lowercased ID plus a number, for
