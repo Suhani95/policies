@@ -68,17 +68,11 @@ These changes need manual review, and appear under **Not mapped**:
 
 ### Issue structure
 
-Every issue has the same sections, in this order:
-
-| Section | Contents |
-|---|---|
-| Summary | The release, the issue type, and the recommended action |
-| Release details | The release and the previous minor, the publish time in UTC, the source and comparison links, and a link to the `psa-cel-update` issues in kyverno/kyverno, whose chart CEL can serve as a reference |
-| What changed | What the upstream diff shows, split into code, fixtures, and test code |
-| Policy impact | Each mapped policy with its file, its test folders, and the values that it has or lacks, and the changes under **Not mapped** |
-| Required actions | A checklist for the issue type. An update keeps the `exceptions.*` checks and the controller match rules, updates the tests, and refreshes the Artifact Hub digests. Every issue ends with moving `since`. |
-| Validation | Checks for the actions: the upstream fixtures, `kyverno test pod-security-vpol`, the chainsaw tests, and the Artifact Hub digests |
-| Upstream evidence | The upstream commits and the changed files, with links to the comparison |
+Every issue has the same sections: **Summary**, **Release details**, **What changed**, **Policy impact**,
+**Required actions**, **Validation**, and **Upstream evidence**. **Release details** links the `psa-cel-update`
+issues in kyverno/kyverno, whose chart CEL can serve as a reference. An update's checklist keeps the `exceptions.*`
+checks and the controller match rules, updates the tests, and refreshes the Artifact Hub digests. Every issue ends
+with moving `since`.
 
 Upstream text can't ping anyone or link elsewhere: commit subjects are in code spans, the issue links commits
 rather than pull requests, and no upstream code goes into the issue body.
@@ -108,7 +102,7 @@ pause them.
 The workflow uses the default `GITHUB_TOKEN` with `contents: read` and `issues: write`, and no secret. It creates
 the `psa-vpol-update` and `needs-manual-review` labels if they don't exist. When a scheduled run fails, the
 `sync-issue` job opens a `workflow-failure` issue with the failing log, and closes it when a later scheduled run
-succeeds. It uses `.github/actions/workflow/failure-issue`, a copy of the same action in kyverno/kyverno.
+succeeds. It calls the `failure-issue` action from kyverno/kyverno, pinned to a commit.
 
 The repository must have Issues turned on. Every run, including a dry run, checks this first and fails with a clear
 message when they're off. Forks have Issues off by default.
@@ -143,8 +137,8 @@ When upstream adds a check, add it to `checks`. The tests fail when a mapped pol
 
 ## Test a change
 
-The `Test PSA release issues` job runs `test-psa-release-issues.py` on each pull request that changes the workflow, the files in this
-folder, or `pod-security-vpol/`. The tests use a local git repository shaped like the mirror, a fake GitHub API,
+The `Test PSA release issues` job runs `test-psa-release-issues.py` on each pull request that changes the
+workflow, the files in this folder, or `pod-security-vpol/`. The tests use a local git repository shaped like the mirror, a fake GitHub API,
 and a fake `gh` process, and they read the workflow file to check its permissions, pinned actions, timeouts,
 inputs, defaults, and concurrency group. They don't run the workflow.
 
