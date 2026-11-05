@@ -1095,7 +1095,7 @@ class WorkflowTest(unittest.TestCase):
         self.assertEqual(self.workflow["permissions"], {})
         self.assertEqual(self.jobs["test"]["permissions"], {"contents": "read"})
         self.assertEqual(self.jobs["check"]["permissions"], {"contents": "read", "issues": "write"})
-        self.assertEqual(sorted(self.jobs), ["check", "test"])
+        self.assertEqual(self.jobs["sync-issue"]["permissions"], {"contents": "read", "issues": "write"})
         # No secret other than the built-in token.
         text = self.path.read_text(encoding="utf-8")
         self.assertNotIn("secrets.", text)
@@ -1143,6 +1143,19 @@ class WorkflowTest(unittest.TestCase):
         self.assertIs(concurrency["cancel-in-progress"], False)
         # Without it, a newly queued run cancels the pending one, and its tag is never checked.
         self.assertEqual(concurrency["queue"], "max")
+
+    def test_the_test_job_name_differs_from_the_required_test_check(self):
+        # ci.yml's job "test" is a required check; a job with the same name would be confused with it.
+        self.assertEqual(self.jobs["test"]["name"], "Test PSA release issues")
+
+    def test_a_failed_scheduled_run_syncs_the_failure_issue(self):
+        sync = self.jobs["sync-issue"]
+        # Only scheduled runs, and only when they're turned on, so a manual or dry run never opens one.
+        self.assertEqual(sync["if"], "always() && github.event_name == 'schedule' && vars.PSA_VPOL_UPDATE_ISSUES == 'true'")
+        self.assertEqual(sync["needs"], ["test", "check"])
+        step = next(s for s in sync["steps"] if s.get("name") == "Sync issue")
+        self.assertEqual(step["uses"], "./.github/actions/workflow/failure-issue")
+        self.assertTrue((ROOT / ".github/actions/workflow/failure-issue/action.yaml").is_file())
 
     def test_pull_requests_run_the_tests_for_every_input_file(self):
         paths = set(self.on["pull_request"]["paths"])
