@@ -145,12 +145,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
+      # The same action as kyverno/kyverno's workflows, pinned like the shared Kubernetes matrix in test.yml.
       - name: Sync issue
-        uses: ./.github/actions/workflow/failure-issue
+        uses: kyverno/kyverno/.github/actions/workflow/failure-issue@d0cce6959e4d92c57c7851c02d97c0f98bfb06de # main
         with:
           conclusion: ${{ contains(needs.*.result, 'failure') && 'failure' || job.status }}
           needs: ${{ toJSON(needs) }}

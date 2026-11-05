@@ -688,9 +688,7 @@ class AnalyzeTest(Base):
                           f"See the [full comparison]({compare})."], issue.sections["Upstream evidence"])
 
     def test_a_test_mirror_is_marked_and_the_upstream_mirror_is_not(self):
-        self.upstream.release("37.0", days_ago=3)
-        self.upstream.release("38.0", days_ago=2, files={"policy/check_sysctls.go": check_sysctls(gate=39)})
-        test = self.issue()
+        test = self.change({"policy/check_sysctls.go": check_sysctls(gate=39)})
         self.assertIn(f"> This issue was generated from `{TEST_MIRROR}`, not `kubernetes/pod-security-admission`.",
                       test.sections["Summary"])
         real = self.issue(repository=psa.DEFAULT_REPOSITORY)
@@ -700,9 +698,7 @@ class AnalyzeTest(Base):
                       real.sections["Release details"])
 
     def test_published_time_is_utc(self):
-        self.upstream.release("37.0", days_ago=3)
-        self.upstream.release("38.0", days_ago=2, files={"policy/check_sysctls.go": check_sysctls(gate=39)})
-        self.assertRegex(self.issue().sections["Release details"],
+        self.assertRegex(self.change({"policy/check_sysctls.go": check_sysctls(gate=39)}).sections["Release details"],
                          r"\| Published \| \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC \|")
         india = timezone(timedelta(hours=5, minutes=30))
         self.assertEqual(psa.utc(datetime(2026, 8, 26, 16, 14, tzinfo=india)), "2026-08-26 10:44 UTC")
@@ -1154,8 +1150,8 @@ class WorkflowTest(unittest.TestCase):
         self.assertEqual(sync["if"], "always() && github.event_name == 'schedule' && vars.PSA_VPOL_UPDATE_ISSUES == 'true'")
         self.assertEqual(sync["needs"], ["test", "check"])
         step = next(s for s in sync["steps"] if s.get("name") == "Sync issue")
-        self.assertEqual(step["uses"], "./.github/actions/workflow/failure-issue")
-        self.assertTrue((ROOT / ".github/actions/workflow/failure-issue/action.yaml").is_file())
+        # kyverno/kyverno's action, pinned to a commit, so this repository keeps no copy of it.
+        self.assertRegex(step["uses"], r"^kyverno/kyverno/\.github/actions/workflow/failure-issue@[0-9a-f]{40}$")
 
     def test_pull_requests_run_the_tests_for_every_input_file(self):
         paths = set(self.on["pull_request"]["paths"])
