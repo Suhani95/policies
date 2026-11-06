@@ -1124,7 +1124,7 @@ class WorkflowTest(unittest.TestCase):
         # Scheduled runs are opt-in, and only the default branch opens issues.
         self.assertEqual(check["if"], "github.event_name == 'workflow_dispatch' || "
                                       "(github.event_name == 'schedule' && vars.PSA_VPOL_UPDATE_ISSUES == 'true')")
-        # A scheduled run of the default branch is the only real run that nobody starts by hand.
+        # Scheduled runs on the default branch open issues; manual runs follow the dry-run input.
         self.assertEqual(check["env"]["DRY_RUN"],
                          "${{ (github.event_name == 'workflow_dispatch' && inputs.dry-run) || "
                          "github.ref_name != github.event.repository.default_branch }}")
