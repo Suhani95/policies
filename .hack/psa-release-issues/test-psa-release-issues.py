@@ -1122,9 +1122,12 @@ class WorkflowTest(unittest.TestCase):
         self.assertEqual(self.on["schedule"], [{"cron": "23 6 1 1,4,7,10 *"}])
         check = self.jobs["check"]
         # Scheduled runs are opt-in, and only the default branch opens issues.
-        self.assertIn("vars.PSA_VPOL_UPDATE_ISSUES == 'true'", check["if"])
-        self.assertIn("github.ref_name != github.event.repository.default_branch", check["env"]["DRY_RUN"])
-        self.assertNotIn("pull_request", check["if"])
+        self.assertEqual(check["if"], "github.event_name == 'workflow_dispatch' || "
+                                      "(github.event_name == 'schedule' && vars.PSA_VPOL_UPDATE_ISSUES == 'true')")
+        # A scheduled run of the default branch is the only real run that nobody starts by hand.
+        self.assertEqual(check["env"]["DRY_RUN"],
+                         "${{ (github.event_name == 'workflow_dispatch' && inputs.dry-run) || "
+                         "github.ref_name != github.event.repository.default_branch }}")
         self.assertEqual(check["needs"], ["test"])
         # The test-only repository input is empty by default, so scheduled runs read the upstream mirror.
         self.assertEqual(inputs["repository"]["default"], "")
