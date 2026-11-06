@@ -17,8 +17,6 @@ on:
   schedule:
     # Quarterly, on January, April, July, and October 1 at 06:23 UTC.
     - cron: '23 6 1 1,4,7,10 *'
-    # TEMP fork test: every 15 minutes.
-    - cron: '4,19,34,49 * * * *'
   workflow_dispatch:
     inputs:
       dry-run:
@@ -70,8 +68,7 @@ jobs:
       - name: Run the tests
         run: |
           set -e
-          # TEMP fork test: workflow tests fail on the TEMP edits.
-          "$PSA_PYTHON" .hack/psa-release-issues/test-psa-release-issues.py || echo "::warning title=TEMP fork test::Workflow tests fail on the TEMP edits"
+          "$PSA_PYTHON" .hack/psa-release-issues/test-psa-release-issues.py
 
   check:
     name: Check releases
@@ -109,11 +106,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          # TEMP fork test: scheduled runs check the fake release on the PSA fork.
-          TAG: ${{ github.event_name == 'schedule' && 'kubernetes-1.40.0' || inputs.tag }}
+          TAG: ${{ inputs.tag }}
           SINCE: ${{ inputs.since }}
           # Empty, and so kubernetes/pod-security-admission, unless a manual run sets it.
-          REPOSITORY: ${{ github.event_name == 'schedule' && 'https://github.com/Suhani95/pod-security-admission' || inputs.repository }}
+          REPOSITORY: ${{ inputs.repository }}
         run: |
           args=(--repo "$REPO" --out "$RUNNER_TEMP/psa-release-out")
           [ "$DRY_RUN" = "true" ] && args+=(--dry-run)
