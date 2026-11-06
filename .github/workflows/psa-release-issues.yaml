@@ -17,8 +17,6 @@ on:
   schedule:
     # Quarterly, on January, April, July, and October 1 at 06:23 UTC.
     - cron: '23 6 1 1,4,7,10 *'
-    # TEMP fork test: every 15 minutes, to catch a scheduled run.
-    - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
     inputs:
       dry-run:
@@ -37,11 +35,6 @@ on:
         description: For testing, read releases from this PSA fork, such as https://github.com/OWNER/pod-security-admission
         type: string
         default: ''
-      # TEMP fork test: makes the check job fail.
-      force-failure:
-        description: TEMP fork test, fail the check job
-        type: boolean
-        default: false
   pull_request:
     branches:
       - main
@@ -75,8 +68,7 @@ jobs:
       - name: Run the tests
         run: |
           set -e
-          # TEMP fork test: two workflow tests fail on the TEMP edits.
-          "$PSA_PYTHON" .hack/psa-release-issues/test-psa-release-issues.py || echo "::warning title=TEMP fork test::Workflow tests fail on the TEMP edits"
+          "$PSA_PYTHON" .hack/psa-release-issues/test-psa-release-issues.py
 
   check:
     name: Check releases
@@ -110,12 +102,6 @@ jobs:
           python3 -m venv "$RUNNER_TEMP/psa-release"
           "$RUNNER_TEMP/psa-release/bin/python" -m pip install --disable-pip-version-check PyYAML==6.0.3
           echo "PSA_PYTHON=$RUNNER_TEMP/psa-release/bin/python" >> "$GITHUB_ENV"
-      # TEMP fork test.
-      - name: Force a failure
-        if: inputs.force-failure
-        run: |
-          echo "::error title=TEMP fork test::Forced failure for the sync-issue test"
-          exit 1
       - name: Check releases
         env:
           GH_TOKEN: ${{ github.token }}
@@ -149,8 +135,7 @@ jobs:
   # Opens a workflow-failure issue when a scheduled run fails, and closes it
   # when a later scheduled run succeeds, so a missed release doesn't go unnoticed.
   sync-issue:
-    # TEMP fork test: also runs on manual runs.
-    if: always() && ((github.event_name == 'schedule' && vars.PSA_VPOL_UPDATE_ISSUES == 'true') || github.event_name == 'workflow_dispatch')
+    if: always() && github.event_name == 'schedule' && vars.PSA_VPOL_UPDATE_ISSUES == 'true'
     needs:
       - test
       - check
